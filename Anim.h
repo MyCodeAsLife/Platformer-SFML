@@ -18,7 +18,7 @@ public:
 public:
 	Animation();
 	Animation(Texture& texture, int x, int y, int width, int height, int count, float speed, int step);
-	void tick(const float time);
+	void tick(float time);							// Воспроизведение анимации
 
 };
 
@@ -30,11 +30,11 @@ public:
 
 public:
 	AnimationManager() {};
-	void create(String& name, Texture& texture, int x, int y, int width, int height, int count, float speed, int step);
+	void create(const String& name, Texture& texture, int x, int y, int width, int height, int count, float speed, int step);
 	void draw(RenderWindow& window, int x = 0, int y = 0);
-	void set(String& name) { m_currentAnim = name; }
-	void flip(bool b) { m_animList[m_currentAnim].m_flip = b; }
-	void tick(const float time) { m_animList[m_currentAnim].tick(time); }
+	void set(const String& name) { m_currentAnim = name; }
+	void flip(bool b = 1) { m_animList[m_currentAnim].m_flip = b; }
+	void tick(float time) { m_animList[m_currentAnim].tick(time); }
 	void pause() { m_animList[m_currentAnim].m_isPlaying = false; }
 	void play() { m_animList[m_currentAnim].m_isPlaying = true; }
 
@@ -58,30 +58,46 @@ inline Animation::Animation(Texture& texture, int x, int y, int width, int heigh
 	// Создаем 2 массива кадров, обычных и зеркальных для анимаций.
 	for (int i(0); i < count; ++i)
 	{
-		m_frames.push_back(IntRect(x + i * step, y, width, height));
+		m_frames.push_back(IntRect(x + i * step , y, width, height));
 		m_frames_flip.push_back(IntRect(x + i * step + width, y, -width, height));
 	}
 }
 
-inline void Animation::tick(const float time)
+inline void Animation::tick(float time)
 {
 	if (!m_isPlaying)
 		return;
 
-	m_currentFrame += m_speed * time;		// Скорость анимации
-	if (m_currentFrame > m_frames.size())	// Анимация
+	m_currentFrame += m_speed * time;			// Анимация(текущий кадр)
+	while (m_currentFrame > m_frames.size())	// Откат кадров анимации (цикл для того чтобы случайно не выскачить за массив кадров)
+	{
 		m_currentFrame -= m_frames.size();
-
+		if (m_currentFrame < 0)
+			m_currentFrame = 0;
+	}
 	if (!m_flip)	// Выбираем обычные или зеркальные фреймы/кадры
-		m_sprite.setTextureRect(m_frames[m_currentFrame]);
+		m_sprite.setTextureRect(m_frames[static_cast<int>(m_currentFrame)]);
 	else
-		m_sprite.setTextureRect(m_frames_flip[m_currentFrame]);
+		m_sprite.setTextureRect(m_frames_flip[static_cast<int>(m_currentFrame)]);
 }
 
-void AnimationManager::create(String& name, Texture& texture, int x, int y, int width, int height, int count, float speed, int step)
+void AnimationManager::create(const String& name, Texture& texture, int x, int y, int width, int height, int count, float speed, int step = 0)
 {
 	m_animList[name] = Animation(texture, x, y, width, height, count, speed, step);
 	m_currentAnim = name;
+	//Animation a;
+	//a.m_speed = speed;
+	////a.m_loop = Loop;
+	//a.m_sprite.setTexture(texture);
+	//a.m_sprite.setOrigin(0, height);
+
+	//for (int i = 0; i < count; i++)
+	//{
+	//	a.m_frames.push_back(IntRect(x + i * step, y, width, height));
+	//	a.m_frames_flip.push_back(IntRect(x + i * step + width, y, -width, height));
+	//}
+	//m_animList[name] = a;
+	//m_currentAnim = name;
 }
 
 inline void AnimationManager::draw(RenderWindow& window, int x, int y)
